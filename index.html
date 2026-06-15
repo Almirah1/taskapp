@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Day — Daily Planner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f7f6f3; --surface:#fff; --surface2:#f0efe9;
+  --border:rgba(0,0,0,0.09); --border2:rgba(0,0,0,0.16);
+  --text:#1a1a18; --text2:#6b6a64; --text3:#a3a29b;
+  --radius:12px; --radius-sm:8px;
+  --sleep-c:#6c5ce7; --sleep-bg:#f0eeff;
+  --gym-c:#e05c2a;   --gym-bg:#fef0ea;
+  --steps-c:#00a67c; --steps-bg:#e4f8f1;
+  --chore-c:#2d7dd2; --chore-bg:#e8f2fc;
+  --travel-c:#c2801a;--travel-bg:#fef3e0;
+  --meal-c:#b0436e;  --meal-bg:#fceef4;
+  --down-c:#8a8a82;  --down-bg:#f0efe9;
+  --prayer-c:#1a7a4a;--prayer-bg:#e6f5ed;
+  --shower-c:#0891b2;--shower-bg:#e0f5fa;
+  --hair-c:#7c3aed;  --hair-bg:#ede9fe;
+  --free-c:#8a8a82;  --free-bg:#f0efe9;
+  --water-c:#0ea5e9; --water-bg:#e0f2fe;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1a1a18; --surface:#242422; --surface2:#2e2e2b;
+  --border:rgba(255,255,255,0.09); --border2:rgba(255,255,255,0.16);
+  --text:#f0efe9; --text2:#a3a29b; --text3:#6b6a64;
+  --sleep-bg:#2a2545; --gym-bg:#3a2018; --steps-bg:#1a3328;
+  --chore-bg:#1a2c40; --travel-bg:#342510; --meal-bg:#2e1a24;
+  --down-bg:#2e2e2b; --prayer-bg:#0f2a1c; --shower-bg:#0a2a33; --hair-bg:#1e1533; --free-bg:#2e2e2b; --water-bg:#082840;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:560px;margin:0 auto;padding:0 0 6rem;}
+
+.header{background:var(--surface);border-bottom:0.5px solid var(--border);padding:1rem 1.25rem 0.875rem;position:sticky;top:0;z-index:10;}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;}
+.app-title{font-size:17px;font-weight:600;letter-spacing:-0.02em;}
+.day-nav{display:flex;align-items:center;background:var(--surface2);border-radius:20px;overflow:hidden;border:0.5px solid var(--border);}
+.day-nav button{background:none;border:none;padding:5px 10px;cursor:pointer;color:var(--text2);font-size:15px;display:flex;align-items:center;}
+.day-nav button:hover{color:var(--text);}
+.day-label{font-size:13px;font-weight:500;color:var(--text);padding:0 4px;min-width:88px;text-align:center;}
+
+.banner{display:none;align-items:center;gap:8px;border-radius:var(--radius-sm);padding:7px 10px;margin-bottom:6px;font-size:12px;border:0.5px solid transparent;}
+.banner.visible{display:flex;}
+.banner i{font-size:14px;flex-shrink:0;}
+.banner-prayer{background:var(--prayer-bg);color:var(--prayer-c);border-color:rgba(26,122,74,0.25);}
+.banner-hair{background:var(--hair-bg);color:var(--hair-c);border-color:rgba(124,58,237,0.25);}
+
+.summary-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.s-card{background:var(--surface2);border-radius:var(--radius-sm);padding:7px 8px;border:0.5px solid var(--border);}
+.s-lbl{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text3);margin-bottom:3px;}
+.s-lbl i{font-size:12px;}
+.s-val{font-size:14px;font-weight:600;letter-spacing:-0.02em;}
+.s-track{height:2px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;}
+.s-fill{height:2px;border-radius:2px;transition:width 0.4s;}
+
+/* Weather */
+.weather-section{padding:1rem 1.25rem 0;}
+.weather-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.weather-header{padding:0.75rem 1rem 0;display:flex;align-items:center;justify-content:space-between;}
+.weather-title{font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:6px;}
+.weather-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;padding:0.75rem 0.75rem 0.75rem;}
+.w-col{border-radius:var(--radius-sm);padding:6px 3px;text-align:center;}
+.w-col.today{background:var(--prayer-bg);}
+.w-day-name{font-size:10px;color:var(--text3);margin-bottom:3px;}
+.w-col.today .w-day-name{color:var(--prayer-c);font-weight:600;}
+.w-icon{font-size:16px;margin-bottom:2px;}
+.w-rain{font-size:9px;color:var(--text3);margin-bottom:4px;}
+.w-tasks{display:flex;flex-direction:column;gap:2px;}
+.w-chip{font-size:8px;padding:2px 3px;border-radius:3px;font-weight:600;line-height:1.3;}
+.chip-sun{background:#fef3e0;color:#8a5a0a;}
+.chip-rain{background:#fef0ea;color:#b54015;}
+.chip-any{background:#e8f2fc;color:#1a5a9a;}
+@media(prefers-color-scheme:dark){
+  .chip-sun{background:#342510;color:#f0c060;}
+  .chip-rain{background:#3a2018;color:#f5946a;}
+  .chip-any{background:#1a2c40;color:#7bb8f0;}
+}
+
+/* Gym split panel */
+.gym-section{padding:0.75rem 1.25rem 0;}
+.gym-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:0.875rem 1rem;}
+.gym-week{display:flex;flex-direction:column;gap:6px;}
+.gym-day-row{display:flex;align-items:center;gap:8px;}
+.gym-day-label{font-size:11px;font-weight:500;color:var(--text2);min-width:32px;}
+.gym-workout{flex:1;display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:var(--radius-sm);border:0.5px solid transparent;}
+.gym-rest{font-size:11px;color:var(--text3);font-style:italic;display:flex;align-items:center;gap:5px;}
+.gym-rest i{font-size:12px;}
+
+/* Cleaning panel */
+.cleaning-section{padding:0.75rem 1.25rem 0;}
+.cleaning-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:0.875rem 1rem;}
+.cleaning-title{font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.cleaning-week{display:flex;flex-direction:column;gap:6px;}
+.cleaning-day-row{display:flex;align-items:flex-start;gap:8px;}
+.cleaning-day-label{font-size:11px;font-weight:500;color:var(--text2);min-width:32px;padding-top:3px;}
+.cleaning-tasks{display:flex;flex-wrap:wrap;gap:4px;flex:1;}
+.task-chip{font-size:11px;padding:3px 8px;border-radius:6px;border:0.5px solid transparent;display:flex;align-items:center;gap:4px;}
+.task-chip.weather-needed{background:var(--travel-bg);color:var(--travel-c);border-color:rgba(194,128,26,0.25);}
+.task-chip.any-day{background:var(--chore-bg);color:var(--chore-c);border-color:rgba(45,125,210,0.2);}
+.task-chip.warning{background:#fef0ea;color:#b54015;border-color:rgba(181,64,21,0.2);}
+.task-chip i{font-size:12px;}
+.no-tasks{font-size:12px;color:var(--text3);font-style:italic;}
+
+/* Timeline */
+.timeline-section{padding:1rem 1.25rem 0;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+.block-row{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start;}
+.time-col{font-size:11px;color:var(--text3);width:40px;text-align:right;padding-top:11px;flex-shrink:0;font-variant-numeric:tabular-nums;}
+.block-card{flex:1;border-radius:var(--radius);padding:10px 12px;border:0.5px solid transparent;display:flex;align-items:center;gap:10px;transition:opacity 0.15s;min-width:0;}
+.block-card.done{opacity:0.4;}
+.block-card.done .b-name{text-decoration:line-through;}
+.b-icon{font-size:19px;flex-shrink:0;}
+.b-info{flex:1;min-width:0;}
+.b-name{font-size:14px;font-weight:500;}
+.b-meta{font-size:12px;margin-top:1px;opacity:0.7;}
+.b-dur{font-size:11px;opacity:0.6;flex-shrink:0;}
+.check-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid currentColor;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all 0.15s;opacity:0.5;}
+.check-btn:hover{opacity:1;}
+.check-btn.checked{opacity:1;background:currentColor;}
+.check-btn.checked i{color:white;}
+.act-btns{display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
+.del-btn,.edit-btn{width:20px;height:20px;border-radius:50%;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text3);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;}
+.block-row:hover .del-btn.removable,.block-row:hover .edit-btn.editable{opacity:1;}
+.del-btn:hover{color:#e24b4a;}
+.edit-btn:hover{color:var(--chore-c);}
+.drag-handle{width:20px;height:36px;display:flex;align-items:center;justify-content:center;cursor:grab;color:var(--text3);font-size:14px;opacity:0;transition:opacity 0.15s;flex-shrink:0;-webkit-user-select:none;user-select:none;}
+.drag-handle:active{cursor:grabbing;}
+.drag-handle-locked{opacity:0!important;pointer-events:none;}
+@media(hover:none){.drag-handle:not(.drag-handle-locked){opacity:0.35;}}
+.block-row:hover .drag-handle:not(.drag-handle-locked){opacity:1;}
+.block-row.dragging{opacity:0.35;}
+.block-row.drag-over-above{border-top:2px solid var(--prayer-c);}
+.block-row.drag-over-below{border-bottom:2px solid var(--prayer-c);}
+
+.gap-row{display:flex;align-items:center;gap:8px;margin:3px 0 3px 50px;}
+.gap-line{flex:1;height:0.5px;background:var(--border);}
+.gap-lbl{font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 8px;border-radius:10px;border:0.5px solid var(--border);white-space:nowrap;}
+
+.add-row{padding:1rem 1.25rem 0;}
+.add-btn{width:100%;padding:11px;border:0.5px dashed var(--border2);background:none;border-radius:var(--radius);font-size:13px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;font-family:inherit;}
+.add-btn:hover{background:var(--surface);color:var(--text);}
+.status-msg{text-align:center;padding:2rem;color:var(--text3);font-size:13px;}
+.status-msg i{font-size:22px;display:block;margin-bottom:8px;}
+
+/* Water tracker */
+.water-section{padding:0.75rem 1.25rem 0;}
+.water-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:0.875rem 1rem;}
+.water-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.water-title{font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:6px;}
+.water-amount{font-size:13px;font-weight:600;color:var(--water-c);}
+.water-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.water-time{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text3);width:38px;flex-shrink:0;}
+.water-time.overdue{color:#e05c2a;font-weight:600;}
+.water-bottle{flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:none;cursor:pointer;font-family:inherit;transition:all 0.15s;text-align:left;}
+.water-bottle:hover{border-color:var(--water-c);}
+.water-bottle.done{background:var(--water-bg);border-color:var(--water-c);}
+.water-bottle.overdue{border-color:#e05c2a;background:#fef0ea;}
+.water-bottle.overdue .bottle-label{color:#e05c2a;}
+@media(prefers-color-scheme:dark){.water-bottle.overdue{background:#3a2018;}}
+.bottle-icon{font-size:16px;}
+.bottle-label{font-size:13px;color:var(--text2);}
+.water-bottle.done .bottle-label{color:var(--water-c);font-weight:500;}
+.water-bar-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.water-bar-fill{height:6px;border-radius:3px;background:var(--water-c);transition:width 0.4s ease;}
+.water-goal-row{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3);}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;align-items:flex-end;justify-content:center;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.25rem;width:100%;max-width:560px;border-top:0.5px solid var(--border);}
+@media(min-width:600px){.modal-overlay{align-items:center;}.modal{border-radius:var(--radius);border:0.5px solid var(--border);max-width:400px;}}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:1rem;}
+.form-field{margin-bottom:12px;}
+.form-label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;}
+.form-field select,.form-field input{width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit;outline:none;}
+.form-field select:focus,.form-field input:focus{border-color:#1a7a4a;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;}
+.btn-cancel{padding:8px 16px;border:0.5px solid var(--border2);background:none;border-radius:var(--radius-sm);font-size:13px;color:var(--text2);cursor:pointer;font-family:inherit;}
+.btn-add{padding:8px 20px;border:none;background:#1a7a4a;color:white;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;}
+.btn-add:hover{background:#145e38;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <span class="app-title">My day</span>
+      <div class="day-nav">
+        <button onclick="changeDay(-1)" aria-label="Previous day"><i class="ti ti-chevron-left"></i></button>
+        <span class="day-label" id="day-label">Today</span>
+        <button onclick="changeDay(1)" aria-label="Next day"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div class="banner banner-prayer" id="prayer-banner"><i class="ti ti-moon-stars"></i><span id="prayer-text"></span></div>
+    <div class="banner banner-hair" id="hair-banner"><i class="ti ti-sparkles"></i><span id="hair-text"></span></div>
+    <div class="summary-row">
+      <div class="s-card"><div class="s-lbl"><i class="ti ti-moon"></i>Sleep</div><div class="s-val" id="sum-sleep" style="color:var(--sleep-c)">0h</div><div class="s-track"><div class="s-fill" id="bar-sleep" style="background:var(--sleep-c);width:0%"></div></div></div>
+      <div class="s-card"><div class="s-lbl"><i class="ti ti-walk"></i>Steps</div><div class="s-val" id="sum-steps" style="color:var(--steps-c)">0</div><div class="s-track"><div class="s-fill" id="bar-steps" style="background:var(--steps-c);width:0%"></div></div></div>
+      <div class="s-card"><div class="s-lbl"><i class="ti ti-barbell"></i>Gym</div><div class="s-val" id="sum-gym" style="color:var(--gym-c)">—</div><div class="s-track"><div class="s-fill" id="bar-gym" style="background:var(--gym-c);width:0%"></div></div></div>
+      <div class="s-card"><div class="s-lbl"><i class="ti ti-home"></i>Chores</div><div class="s-val" id="sum-chores" style="color:var(--chore-c)">0/0</div><div class="s-track"><div class="s-fill" id="bar-chores" style="background:var(--chore-c);width:0%"></div></div></div>
+      <div class="s-card"><div class="s-lbl"><i class="ti ti-clock"></i>Free</div><div class="s-val" id="sum-free" style="color:var(--free-c)">0h</div><div class="s-track"><div class="s-fill" id="bar-free" style="background:var(--free-c);width:0%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="weather-section">
+    <div class="weather-panel">
+      <div class="weather-header">
+        <div class="weather-title"><i class="ti ti-cloud"></i>This week — Auckland</div>
+      </div>
+      <div id="weather-content"><div class="weather-grid" style="padding:1rem"><div class="weather-loading" style="grid-column:1/-1;font-size:12px;color:var(--text3);text-align:center">Fetching forecast…</div></div></div>
+    </div>
+  </div>
+
+  <div class="cleaning-section">
+    <div class="cleaning-panel">
+      <div class="cleaning-title"><i class="ti ti-calendar-week"></i>This week</div>
+      <div id="combined-week-content"><div class="no-tasks">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="water-section">
+    <div class="water-panel">
+      <div class="water-header">
+        <div class="water-title"><i class="ti ti-droplet-filled"></i>Water</div>
+        <span class="water-amount" id="water-amount">0 / 2.5L</span>
+      </div>
+      <div id="water-cups"></div>
+      <div class="water-bar-track" style="margin-top:10px"><div class="water-bar-fill" id="water-bar" style="width:0%"></div></div>
+      <div class="water-goal-row"><span>0ml</span><span>Goal: 2500ml</span><span>3000ml</span></div>
+    </div>
+  </div>
+
+  <div class="timeline-section">
+    <div class="eyebrow">Schedule</div>
+    <div id="timeline"></div>
+  </div>
+  <div class="add-row">
+    <button class="add-btn" onclick="openModal()"><i class="ti ti-plus"></i> Add block</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add time block</div>
+    <div class="form-field"><label class="form-label">Type</label>
+      <select id="m-type">
+        <option value="sleep">Sleep</option><option value="gym">Gym</option>
+        <option value="steps">Steps / walk</option><option value="chore">Cleaning</option>
+        <option value="travel">Travel</option><option value="meal">Meal</option>
+        <option value="shower">Shower</option><option value="downtime">Downtime</option>
+        <option value="free">Other</option>
+      </select>
+    </div>
+    <div class="form-field"><label class="form-label">Label (optional)</label><input type="text" id="m-label" placeholder="e.g. Cook dinner"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-field"><label class="form-label">Start time</label><input type="time" id="m-start" value="08:00"></div>
+      <div class="form-field"><label class="form-label">Duration (mins)</label><input type="number" id="m-dur" value="30" min="5" step="5"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-add" onclick="addBlock()" id="modal-submit">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const LAT=-36.8485, LNG=174.7633;
+const HAIR_ANCHOR_MS=new Date('2026-06-15').getTime();
+const HAIR_FREQ=2;
+
+function isHairWashDay(dateStr){
+  const ms=new Date(dateStr).getTime();
+  const diff=Math.round((ms-HAIR_ANCHOR_MS)/86400000);
+  return ((diff%HAIR_FREQ)+HAIR_FREQ)%HAIR_FREQ===0;
+}
+
+let offset=0, allData={}, weatherCache=null;
+
+const META={
+  sleep:    {icon:'ti-moon',       c:'var(--sleep-c)', bg:'var(--sleep-bg)', label:'Sleep'},
+  gym:      {icon:'ti-barbell',    c:'var(--gym-c)',   bg:'var(--gym-bg)',   label:'Gym session'},
+  steps:    {icon:'ti-walk',       c:'var(--steps-c)', bg:'var(--steps-bg)', label:'Walk / steps'},
+  chore:    {icon:'ti-sparkle',    c:'var(--chore-c)', bg:'var(--chore-bg)', label:'Cleaning time'},
+  travel:   {icon:'ti-car',        c:'var(--travel-c)',bg:'var(--travel-bg)',label:'Travel'},
+  meal:     {icon:'ti-bowl-spoon', c:'var(--meal-c)',  bg:'var(--meal-bg)',  label:'Meal'},
+  downtime: {icon:'ti-sofa',       c:'var(--down-c)',  bg:'var(--down-bg)',  label:'Downtime'},
+  prayer:   {icon:'ti-moon-stars', c:'var(--prayer-c)',bg:'var(--prayer-bg)',label:'Fajr'},
+  shower:   {icon:'ti-droplet',    c:'var(--shower-c)',bg:'var(--shower-bg)',label:'Shower'},
+  hairwash: {icon:'ti-sparkles',   c:'var(--hair-c)',  bg:'var(--hair-bg)', label:'Hair wash & dry'},
+  free:     {icon:'ti-coffee',     c:'var(--free-c)',  bg:'var(--free-bg)', label:'Free time'},
+};
+
+// ── Gym split ─────────────────────────────────────────────────────────────
+// dow: 1=Mon,2=Tue,3=Wed,4=Thu,5=Fri (0/6=weekend=rest)
+const GYM_SPLIT={
+  1:{label:'Upper body + box squats',   icon:'ti-armchair',  focus:['Upper','Box Squat'],  color:'#e05c2a'},
+  2:{label:'PT session',                icon:'ti-user-star', focus:['PT'],                 color:'#7c3aed'},
+  3:{label:'Glute bridge + deadlift',   icon:'ti-barbell',   focus:['Glutes','Deadlift'],  color:'#b0436e'},
+  4:{label:'Safety bar + back',         icon:'ti-barbell',   focus:['Back','Safety Bar'],  color:'#0891b2'},
+  5:{label:'Front squat + arms',        icon:'ti-barbell',   focus:['Front Squat','Arms'], color:'#1a7a4a'},
+};
+
+function getWorkoutForDate(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  return GYM_SPLIT[d.getDay()]||null;
+}
+
+function renderWeekPanel(daily){
+  const el=document.getElementById('combined-week-content');
+  if(!el)return;
+  const schedule=scheduleCleaning(daily);
+  const today=new Date();today.setHours(0,0,0,0);
+  const dow=today.getDay();
+  const monday=new Date(today);monday.setDate(today.getDate()-(dow===0?6:dow-1));
+
+  let html='<div class="cleaning-week">';
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const isToday=d.getTime()===today.getTime();
+    const isPast=d<today;
+    const dayName=isToday?'Today':DAYS_SHORT[d.getDay()];
+    const workout=GYM_SPLIT[d.getDay()];
+    const cleanDay=schedule.find(s=>s.dateStr===ds);
+    const cleanTasks=cleanDay?.tasks||[];
+
+    html+=`<div class="cleaning-day-row" style="${isPast?'opacity:0.45':''}">
+      <div class="cleaning-day-label" style="${isToday?'color:var(--prayer-c);font-weight:600':''}">${dayName}</div>
+      <div class="cleaning-tasks">`;
+
+    // Hair wash chip
+    if(isHairWashDay(ds)){
+      html+=`<span class="task-chip" style="background:var(--hair-bg);color:var(--hair-c);border-color:rgba(124,58,237,0.25);">
+        <i class="ti ti-sparkles" aria-hidden="true"></i>Hair wash
+      </span>`;
+    }
+
+    // Gym chip
+    if(workout){
+      html+=`<span class="task-chip" style="background:${workout.color}0f;color:${workout.color};border-color:${workout.color}25;">
+        <i class="ti ${workout.icon}" aria-hidden="true"></i>${workout.label}
+      </span>`;
+    } else {
+      html+=`<span class="task-chip any-day" style="opacity:0.5"><i class="ti ti-zzz" aria-hidden="true"></i>Rest</span>`;
+    }
+
+    // Cleaning chips
+    cleanTasks.forEach(t=>{
+      let cls='any-day',extra='';
+      if(t.weatherTask){
+        if(t.note==='dryer'){cls='any-day';extra=' ☁️';}
+        else if(t.note==='maybe'){cls='weather-needed';extra=' ☁️';}
+        else if(t.note==='postpone?'){cls='warning';extra=' ⚠️';}
+        else{cls='weather-needed';extra=' ☀️';}
+      }
+      html+=`<span class="task-chip ${cls}"><i class="ti ${t.icon}" aria-hidden="true"></i>${t.label}${extra}</span>`;
+    });
+
+    html+='</div></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ── Cleaning tasks definition ────────────────────────────────────────────
+// needsSun: must have good weather for outdoor drying/work
+// hasDryer: can use dryer as fallback (sheets/towels)
+const ALL_TASKS=[
+  {id:'vacuum',    label:'Vacuum floors',    icon:'ti-vacuum-cleaner', needsSun:false, dur:20},
+  {id:'bathroom',  label:'Clean bathroom',   icon:'ti-droplet',        needsSun:false, dur:25},
+  {id:'surfaces',  label:'Wipe surfaces',    icon:'ti-texture',        needsSun:false, dur:15},
+  {id:'tidy',      label:'Tidy & declutter', icon:'ti-box',            needsSun:false, dur:20},
+  {id:'sheets',    label:'Wash sheets',      icon:'ti-bed',            needsSun:true,  hasDryer:true,  dur:15},
+  {id:'towels',    label:'Wash towels',      icon:'ti-wash-tumble-dry',needsSun:true,  hasDryer:true,  dur:10},
+  {id:'windows',   label:'Clean windows',    icon:'ti-window',         needsSun:true,  hasDryer:false, dur:20},
+  {id:'mow',       label:'Mow grass',        icon:'ti-tools',          needsSun:true,  hasDryer:false, dur:30},
+  {id:'gymwear1',  label:'Wash gym clothes', icon:'ti-shirt',          needsSun:true,  hasDryer:false, dur:10, freq:2},
+  {id:'gymwear2',  label:'Wash gym clothes', icon:'ti-shirt',          needsSun:true,  hasDryer:false, dur:10, freq:2},
+  {id:'workwear',  label:'Wash work clothes',icon:'ti-tie',            needsSun:true,  hasDryer:false, dur:10, freq:1},
+];
+
+// Weekly rotation: spread tasks across Mon–Sun sensibly
+// any-day tasks: one per day Mon–Thu; weather tasks fill best weather days
+function scheduleCleaning(daily) {
+  // Build per-date weather quality (0=bad,1=maybe,2=good)
+  const weatherByDate={};
+  if(daily){
+    daily.time.forEach((dt,i)=>{
+      const rain=daily.precipitation_sum[i]||0;
+      const hrs=daily.precipitation_hours[i]||0;
+      weatherByDate[dt] = rain<2 && hrs<2 ? 2 : (rain<6 && hrs<4 ? 1 : 0);
+    });
+  }
+
+  // Get Mon–Sun of current week
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dow=today.getDay(); // 0=Sun
+  const monday=new Date(today); monday.setDate(today.getDate() - (dow===0?6:dow-1));
+
+  const weekDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(monday); d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    weekDays.push({date:d, dateStr:ds, wq:weatherByDate[ds]??-1, tasks:[]});
+  }
+
+  // Assign weather-sensitive tasks to best available days
+  const sunTasks=ALL_TASKS.filter(t=>t.needsSun);
+  const anyTasks=ALL_TASKS.filter(t=>!t.needsSun);
+
+  // Sort days by weather quality desc for weather tasks, excluding Wednesday (day 3) for washing
+  const sortedByWeather=[...weekDays].sort((a,b)=>b.wq-a.wq);
+  const noWashDays=[3]; // Wednesday
+
+  sunTasks.forEach((task)=>{
+    if(task.id==='gymwear1'){
+      const firstHalf=[...weekDays].filter(d=>d.date.getDay()>=1&&d.date.getDay()<=2).sort((a,b)=>b.wq-a.wq);
+      const day=firstHalf[0]||sortedByWeather.find(d=>!noWashDays.includes(d.date.getDay()));
+      if(day) day.tasks.push({...task, note: day.wq===2?'':(day.wq===1?'maybe':'postpone?'), weatherTask:true});
+    } else if(task.id==='gymwear2'){
+      const secondHalf=[...weekDays].filter(d=>d.date.getDay()>=4&&d.date.getDay()<=6).sort((a,b)=>b.wq-a.wq);
+      const day=secondHalf[0]||sortedByWeather.find(d=>!noWashDays.includes(d.date.getDay()));
+      if(day) day.tasks.push({...task, note: day.wq===2?'':(day.wq===1?'maybe':'postpone?'), weatherTask:true});
+    } else if(task.id==='workwear'){
+      const midWeek=[...weekDays].filter(d=>[4,5].includes(d.date.getDay())).sort((a,b)=>b.wq-a.wq);
+      const day=midWeek[0]||sortedByWeather.find(d=>!noWashDays.includes(d.date.getDay()));
+      if(day) day.tasks.push({...task, note: day.wq===2?'':(day.wq===1?'maybe':'postpone?'), weatherTask:true});
+    } else {
+      const eligibleDays=sortedByWeather.filter(d=>!noWashDays.includes(d.date.getDay()));
+      const nonWashSunTasks=sunTasks.filter(t=>!t.freq);
+      const idx=nonWashSunTasks.indexOf(task);
+      const day=eligibleDays[idx%eligibleDays.length];
+      if(day) day.tasks.push({...task, note: day.wq===2?'':(day.wq===1?'maybe':(task.hasDryer?'dryer':'postpone?')), weatherTask:true});
+    }
+  });
+
+  // Spread any-day tasks across weekdays (Mon–Fri preferred)
+  const weekdays=weekDays.filter(d=>d.date.getDay()>=1&&d.date.getDay()<=5);
+  anyTasks.forEach((task,i)=>{
+    const day=weekdays[i%weekdays.length];
+    day.tasks.push({...task, note:'', weatherTask:false});
+  });
+
+  return weekDays;
+}
+
+// ── Weather grid ──────────────────────────────────────────────────────
+function weatherIcon(code){
+  if(code===0)return'☀️';if(code<=2)return'⛅';if(code<=3)return'☁️';
+  if(code<=49)return'🌫️';if(code<=67)return'🌧️';if(code<=77)return'❄️';
+  if(code<=82)return'🌦️';return'⛈️';
+}
+
+function renderWeather(daily){
+  const el=document.getElementById('weather-content');
+  if(!daily){el.innerHTML='<div style="padding:0.75rem 1rem;font-size:12px;color:var(--text3)">Forecast unavailable — check your connection</div>';return;}
+  const today=new Date();today.setHours(0,0,0,0);
+  let html='<div class="weather-grid">';
+  daily.time.forEach((ds,i)=>{
+    const rain=daily.precipitation_sum[i]||0;
+    const hrs=daily.precipitation_hours[i]||0;
+    const code=daily.weathercode[i]||0;
+    const d=new Date(ds+'T00:00:00');
+    const isToday=d.getTime()===today.getTime();
+    const dayName=isToday?'Today':DAYS_SHORT[d.getDay()];
+    const laundryOk=rain<2&&hrs<2, laundryMaybe=!laundryOk&&rain<6&&hrs<4;
+    const mowOk=rain<1&&hrs===0, mowMaybe=!mowOk&&rain<3&&hrs<=1;
+    const lChip=laundryOk?`<span class="w-chip chip-sun">👕 dry</span>`:laundryMaybe?`<span class="w-chip chip-sun" style="opacity:0.7">👕 maybe</span>`:`<span class="w-chip chip-rain">👕 no</span>`;
+    const mChip=mowOk?`<span class="w-chip chip-sun">🌿 mow</span>`:mowMaybe?`<span class="w-chip chip-sun" style="opacity:0.7">🌿 damp</span>`:`<span class="w-chip chip-rain">🌿 wet</span>`;
+    html+=`<div class="w-col${isToday?' today':''}">
+      <div class="w-day-name">${dayName}</div>
+      <div class="w-icon">${weatherIcon(code)}</div>
+      <div class="w-rain">${rain.toFixed(0)}mm</div>
+      <div class="w-tasks">${lChip}${mChip}</div>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ── Water tracker ────────────────────────────────────────────────────────
+const WATER_GOAL_ML = 2500;
+const CUP_ML = 750;
+const NUM_BOTTLES = Math.ceil(WATER_GOAL_ML / CUP_ML); // 4 bottles = 3L, covers 2.5L goal
+
+let waterData = {}; // dateStr -> Set of bottle indices drunk
+
+function getWaterDone(dateStr){ return waterData[dateStr] || new Set(); }
+
+function getWaterSchedule(dateStr){
+  // Spread bottles evenly from wake time (Fajr-35) to 9:30pm
+  const prayers = prayerCache[dateStr];
+  const fajrM = prayers?.Fajr ? toMins(prayers.Fajr) : toMins('06:00');
+  const wakeM  = fajrM - 35;
+  const endM   = toMins('19:30');
+  const span   = endM - wakeM;
+  return Array.from({length:NUM_BOTTLES}, (_,i)=>{
+    const t = wakeM + Math.round(span * i / (NUM_BOTTLES - 1));
+    return { index:i, time: fromMins(t), label: `Bottle ${i+1}` };
+  });
+}
+
+function renderWater(dateStr){
+  const done   = getWaterDone(dateStr);
+  const sched  = getWaterSchedule(dateStr);
+  const totalMl= done.size * CUP_ML;
+  const pct    = Math.min(100, Math.round(totalMl / WATER_GOAL_ML * 100));
+  const reached= totalMl >= WATER_GOAL_ML;
+  const now    = new Date();
+  const nowM   = now.getHours()*60+now.getMinutes();
+  const isToday= dateStr === dayKey(0);
+
+  document.getElementById('water-amount').textContent =
+    (totalMl>=1000?(totalMl/1000).toFixed(2).replace(/\.?0+$/,'')+'L':totalMl+'ml') +
+    ' / 2.5L' + (reached?' ✓':'');
+  document.getElementById('water-bar').style.width  = pct+'%';
+  document.getElementById('water-bar').style.background = reached?'var(--prayer-c)':'var(--water-c)';
+
+  const cupsEl = document.getElementById('water-cups');
+  cupsEl.innerHTML = '';
+  sched.forEach(s=>{
+    const isDone    = done.has(s.index);
+    const isOverdue = isToday && !isDone && toMins(s.time) <= nowM;
+
+    const row = document.createElement('div');
+    row.className = 'water-row';
+    row.innerHTML = `
+      <div class="water-time ${isOverdue?'overdue':''}">${s.time}</div>
+      <button class="water-bottle ${isDone?'done':''} ${isOverdue?'overdue':''}"
+        onclick="toggleBottle('${dateStr}',${s.index})" aria-label="${isDone?'Unlog':'Log'} bottle ${s.index+1}">
+        <span class="bottle-icon">${isDone?'💧':'🫙'}</span>
+        <span class="bottle-label">${isDone?'Drunk':'750ml'}</span>
+      </button>`;
+    cupsEl.appendChild(row);
+  });
+}
+
+function toggleBottle(dateStr, idx){
+  const done = getWaterDone(dateStr);
+  if(done.has(idx)) done.delete(idx); else done.add(idx);
+  waterData[dateStr] = done;
+  renderWater(dateStr);
+}
+
+
+let prayerCache={}; // dateStr -> {Fajr,Dhuhr,Asr,Maghrib,Isha}
+
+async function fetchPrayers(dateStr){
+  if(prayerCache[dateStr])return prayerCache[dateStr];
+  try{
+    const [y,m,d]=dateStr.split('-');
+    const res=await fetch(`https://api.aladhan.com/v1/timings/${d}-${m}-${y}?latitude=${LAT}&longitude=${LNG}&method=3`);
+    if(!res.ok)throw 0;
+    const json=await res.json();
+    const t=json?.data?.timings;
+    if(t){
+      const clean=s=>s.replace(/\s*\(.*\)/,'').trim();
+      const times={
+        Fajr:clean(t.Fajr), Dhuhr:clean(t.Dhuhr),
+        Asr:clean(t.Asr),   Maghrib:clean(t.Maghrib), Isha:clean(t.Isha)
+      };
+      prayerCache[dateStr]=times;
+      return times;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function fetchWeather(){
+  if(weatherCache)return weatherCache;
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LNG}&daily=precipitation_sum,precipitation_hours,windspeed_10m_max,weathercode&timezone=Pacific%2FAuckland&forecast_days=7`;
+    const res=await fetch(url);if(!res.ok)throw 0;
+    const json=await res.json();
+    weatherCache=json.daily;return weatherCache;
+  }catch(e){return null;}
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function uid(){return Math.random().toString(36).slice(2,9);}
+function toMins(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function fromMins(m){const n=((m%1440)+1440)%1440;return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}
+function durStr(m){const h=Math.floor(m/60),mn=m%60;return h>0?(h+'h'+(mn?' '+mn+'m':'')):(mn+'m');}
+function getDateObj(off=offset){const d=new Date();d.setDate(d.getDate()+off);return d;}
+function dayKey(off=offset){return getDateObj(off).toISOString().slice(0,10);}
+function getBlocks(){return allData[dayKey()]||[];}
+function setBlocks(b){allData[dayKey()]=b;}
+
+// ── Default schedule ───────────────────────────────────────────────────
+function getCleaningTaskForDate(dateStr, daily){
+  const schedule=scheduleCleaning(daily);
+  const day=schedule.find(d=>d.dateStr===dateStr);
+  if(!day||!day.tasks.length)return null;
+  // Return combined label for cleaning block
+  const labels=day.tasks.map(t=>t.label).join(' · ');
+  const totalDur=day.tasks.reduce((s,t)=>s+t.dur,0);
+  return {label:labels, dur:Math.max(20,totalDur)};
+}
+
+function buildDefaultBlocks(prayers, dateStr){
+  const hairWash=isHairWashDay(dateStr);
+  const gymShowerDur=15;
+  const gymShowerLabel='Post-gym shower';
+  const gymShowerType='shower';
+  const postWorkShowerDur=hairWash?40:15;
+  const postWorkShowerLabel=hairWash?'Post-work shower + hair wash':'Post-work shower';
+  const postWorkShowerType=hairWash?'hairwash':'shower';
+  const cleaning=getCleaningTaskForDate(dateStr, weatherCache);
+  const workout=getWorkoutForDate(dateStr);
+  const gymLabel=workout?workout.label:'Gym session';
+
+  const fajrTime=prayers?.Fajr||null;
+
+  const fajrMins = prayers?.Fajr ? toMins(prayers.Fajr) : toMins('06:10');
+  const wakeM    = fajrMins - 35;
+  const preFajrCleanDur = 15;
+  const preFajrCleanStart = fromMins(wakeM);
+  // Fajr starts at fajrMins, so clean runs wakeM → wakeM+15, then gap before Fajr
+
+  const gymStart   = fajrMins + 20; // right after Fajr ends
+  const gymEnd     = gymStart + 20; // 20 min commute
+  const sessionEnd = gymEnd + 75;
+  const showerEnd  = sessionEnd + gymShowerDur;
+  const breakfastEnd = showerEnd + 20;
+
+  const eveningCleanLabel = cleaning ? cleaning.label : 'Cleaning time';
+  const eveningCleanDur   = cleaning ? Math.max(15, cleaning.dur - preFajrCleanDur) : 20;
+  const morningCleanLabel = cleaning ? cleaning.label.split(' · ')[0] : 'Quick clean';
+
+  const blocks=[
+    {id:uid(),type:'chore',  label:morningCleanLabel,  start:preFajrCleanStart,        dur:preFajrCleanDur, done:false},
+    {id:uid(),type:'travel', label:'Commute to gym',   start:fromMins(gymStart),        dur:20,              done:false},
+    {id:uid(),type:'gym',    label:gymLabel,            start:fromMins(gymEnd),          dur:75,              done:false},
+    {id:uid(),type:gymShowerType, label:gymShowerLabel, start:fromMins(sessionEnd),      dur:gymShowerDur,    done:false},
+    {id:uid(),type:'meal',   label:'Breakfast',         start:fromMins(showerEnd),       dur:20,              done:false},
+  ];
+
+  blocks.push(
+    {id:uid(),type:'meal',     label:'Lunch',             start:'12:30',dur:25,  done:false},
+    {id:uid(),type:'steps',    label:'Lunchtime walk',    start:'13:00',dur:45,  done:false},
+    {id:uid(),type:'travel',              label:'Commute home',          start:'17:30',dur:40,                done:false},
+    {id:uid(),type:postWorkShowerType,    label:postWorkShowerLabel,     start:'18:10',dur:postWorkShowerDur, done:false},
+    {id:uid(),type:'meal',                label:'Cook & eat dinner',     start:fromMins(toMins('18:10')+postWorkShowerDur),dur:30,done:false},
+    {id:uid(),type:'downtime',            label:'Wind down',             start:fromMins(toMins('18:10')+postWorkShowerDur+30),dur:30,done:false},
+    {id:uid(),type:'chore',               label:eveningCleanLabel,       start:fromMins(toMins('18:10')+postWorkShowerDur+60),dur:eveningCleanDur,done:false},
+    {id:uid(),type:'chore',               label:'Tidy up',               start:fromMins(toMins('18:10')+postWorkShowerDur+60+eveningCleanDur),dur:15,done:false},
+  );
+
+  // ── All 5 prayers ──
+  if(prayers){
+    const {Fajr,Dhuhr,Asr,Maghrib,Isha}=prayers;
+    const PRAYER_NAMES={Fajr:'Fajr',Dhuhr:'Dhuhr',Asr:'Asr',Maghrib:'Maghrib',Isha:'Isha'};
+
+    // Fajr: split sleep around it
+    if(Fajr){
+      const fM=toMins(Fajr),wakeM=fM-35,afterM=fM+20;
+      const sleepStart='21:30';
+      blocks.push({id:uid(),type:'sleep', label:'Sleep',          start:sleepStart,dur:((wakeM+1440-toMins(sleepStart))%1440),done:false,locked:true});
+      blocks.push({id:uid(),type:'prayer',label:'Fajr',           start:Fajr,      dur:20,done:false,locked:true});
+      // No back-to-sleep — wake up 35 mins before Fajr and stay up
+    } else {
+      blocks.push({id:uid(),type:'sleep',label:'Sleep',start:'21:30',dur:480,done:false});
+    }
+
+    // Dhuhr, Asr, Maghrib, Isha — always show, locked so they can't be deleted
+    [['Dhuhr',Dhuhr],['Asr',Asr],['Maghrib',Maghrib],['Isha',Isha]].forEach(([name,time])=>{
+      if(time) blocks.push({id:uid(),type:'prayer',label:name,start:time,dur:20,done:false,locked:true});
+    });
+  } else {
+    blocks.push({id:uid(),type:'sleep',label:'Sleep',start:'22:00',dur:480,done:false});
+  }
+
+  return blocks;
+}
+
+// ── Summary ────────────────────────────────────────────────────────────
+function updateSummary(blocks){
+  let sleep=0,walk=0,gymDone=false,choreDone=0,choreTotal=0,scheduled=0;
+  blocks.forEach(b=>{
+    if(b.type==='sleep')sleep+=b.dur;
+    if(b.type==='steps')walk+=b.dur;
+    if(b.type==='gym'&&b.done)gymDone=true;
+    if(b.type==='chore'){choreTotal++;if(b.done)choreDone++;}
+    scheduled+=b.dur;
+  });
+  const free=Math.max(0,960-scheduled),steps=Math.round(walk*100);
+  document.getElementById('sum-sleep').textContent=(sleep/60).toFixed(1)+'h';
+  document.getElementById('bar-sleep').style.width=Math.min(100,sleep/480*100)+'%';
+  document.getElementById('sum-steps').textContent=steps>=1000?(steps/1000).toFixed(1)+'k':steps;
+  document.getElementById('bar-steps').style.width=Math.min(100,steps/10000*100)+'%';
+  document.getElementById('sum-gym').textContent=gymDone?'Done':blocks.some(b=>b.type==='gym')?'Sched':'—';
+  document.getElementById('bar-gym').style.width=gymDone?'100%':blocks.some(b=>b.type==='gym')?'50%':'0%';
+  document.getElementById('sum-chores').textContent=choreDone+'/'+choreTotal;
+  document.getElementById('bar-chores').style.width=choreTotal?Math.round(choreDone/choreTotal*100)+'%':'0%';
+  document.getElementById('sum-free').textContent=(free/60).toFixed(1)+'h';
+  document.getElementById('bar-free').style.width=Math.min(100,free/240*100)+'%';
+}
+
+function updateBanners(blocks,dateStr){
+  const prayers=blocks.filter(b=>b.type==='prayer');
+  const pb=document.getElementById('prayer-banner');
+  if(prayers.length){
+    document.getElementById('prayer-text').textContent=
+      prayers.map(p=>p.label+' '+p.start).join(' · ');
+    pb.classList.add('visible');
+  } else pb.classList.remove('visible');
+  const hb=document.getElementById('hair-banner');
+  if(isHairWashDay(dateStr)){document.getElementById('hair-text').textContent='Hair wash day — extra 25 mins added to your post-work shower';hb.classList.add('visible');}
+  else hb.classList.remove('visible');
+}
+
+// ── Render timeline ────────────────────────────────────────────────────
+let dragSrcId=null;
+let touchGhost=null;
+let touchStartY=0;
+
+function clearDragStyles(){
+  document.querySelectorAll('.block-row').forEach(r=>r.classList.remove('drag-over-above','drag-over-below','dragging'));
+}
+
+function getRowAtY(y){
+  // Find the block-row element at a given clientY, excluding the dragging one
+  return [...document.querySelectorAll('.block-row[data-id]')].find(r=>{
+    if(r.dataset.id===dragSrcId)return false;
+    const rect=r.getBoundingClientRect();
+    return y>=rect.top && y<=rect.bottom;
+  });
+}
+
+function applyDragOver(row, clientY){
+  clearDragStyles();
+  if(!row)return;
+  const rect=row.getBoundingClientRect();
+  row.classList.add(clientY<rect.top+rect.height/2?'drag-over-above':'drag-over-below');
+}
+
+function renderBlocks(blocks,dateStr){
+  updateSummary(blocks);
+  updateBanners(blocks,dateStr);
+  const sorted=blocks.slice().sort((a,b)=>toMins(a.start)-toMins(b.start));
+  const tl=document.getElementById('timeline');
+  tl.innerHTML='';
+  let lastEnd=null;
+  sorted.forEach(b=>{
+    const m=META[b.type]||META.free;
+    const startM=toMins(b.start),endM=(startM+b.dur)%(24*60);
+    if(lastEnd!==null&&startM>lastEnd){
+      const gap=startM-lastEnd;
+      const g=document.createElement('div');g.className='gap-row';
+      g.innerHTML=`<div class="gap-line"></div><span class="gap-lbl">${durStr(gap)} free</span><div class="gap-line"></div>`;
+      tl.appendChild(g);
+    }
+    lastEnd=endM;
+    const isPrayer=b.type==='prayer',isLocked=b.locked;
+    const row=document.createElement('div');
+    row.className='block-row';
+    row.dataset.id=b.id;
+
+    row.innerHTML=`
+      <div class="drag-handle${isLocked?' drag-handle-locked':''}" aria-hidden="true" title="Hold to reorder"><i class="ti ti-grip-vertical"></i></div>
+      <div class="time-col">${b.start}</div>
+      <div class="block-card ${b.done?'done':''}" style="background:${m.bg};border-color:${m.c}${isPrayer?'55':'1a'};${isPrayer?'border-width:1px;':''}">
+        <i class="ti ${m.icon} b-icon" aria-hidden="true" style="color:${m.c}"></i>
+        <div class="b-info">
+          <div class="b-name" style="color:${m.c}">${b.label||m.label}</div>
+          <div class="b-meta" style="color:${m.c}">until ${fromMins(endM)}</div>
+        </div>
+        <span class="b-dur" style="color:${m.c}">${durStr(b.dur)}</span>
+        <button class="check-btn ${b.done?'checked':''}" style="color:${m.c};border-color:${m.c};"
+          onclick="toggleDone('${b.id}')" aria-label="${b.done?'Mark incomplete':'Mark done'}">
+          <i class="ti ti-check" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="act-btns">
+        <button class="edit-btn ${isLocked?'':'editable'}" style="${isLocked?'visibility:hidden':''}" onclick="${isLocked?'':'openEdit(\''+b.id+'\')'}" aria-label="Edit"><i class="ti ti-pencil"></i></button>
+        <button class="del-btn ${isLocked?'':'removable'}" style="${isLocked?'visibility:hidden':''}" onclick="${isLocked?'':'deleteBlock(\''+b.id+'\')'}" aria-label="Remove"><i class="ti ti-x"></i></button>
+      </div>`;
+
+    if(!isLocked){
+      const handle=row.querySelector('.drag-handle');
+
+      // ── Mouse drag ──
+      handle.addEventListener('mousedown', e=>{
+        e.preventDefault();
+        dragSrcId=b.id;
+        row.classList.add('dragging');
+        const onMove=e=>{
+          const target=getRowAtY(e.clientY);
+          applyDragOver(target, e.clientY);
+        };
+        const onUp=e=>{
+          document.removeEventListener('mousemove',onMove);
+          document.removeEventListener('mouseup',onUp);
+          const target=getRowAtY(e.clientY);
+          if(target){
+            const rect=target.getBoundingClientRect();
+            reorderBlocks(dragSrcId, target.dataset.id, e.clientY<rect.top+rect.height/2);
+          }
+          dragSrcId=null;
+          clearDragStyles();
+        };
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      });
+
+      // ── Touch drag ──
+      handle.addEventListener('touchstart', e=>{
+        e.preventDefault();
+        dragSrcId=b.id;
+        row.classList.add('dragging');
+        touchStartY=e.touches[0].clientY;
+
+        // Create ghost pill
+        touchGhost=document.createElement('div');
+        touchGhost.className='touch-ghost';
+        touchGhost.textContent=b.label||m.label;
+        touchGhost.style.cssText=`position:fixed;left:50%;transform:translateX(-50%);top:${touchStartY-20}px;
+          background:${m.bg};color:${m.c};border:1.5px solid ${m.c};padding:6px 16px;
+          border-radius:20px;font-size:13px;font-weight:500;pointer-events:none;z-index:999;
+          box-shadow:0 4px 16px rgba(0,0,0,0.18);white-space:nowrap;`;
+        document.body.appendChild(touchGhost);
+      },{passive:false});
+
+      handle.addEventListener('touchmove', e=>{
+        e.preventDefault();
+        const touch=e.touches[0];
+        if(touchGhost) touchGhost.style.top=(touch.clientY-20)+'px';
+        const target=getRowAtY(touch.clientY);
+        applyDragOver(target, touch.clientY);
+      },{passive:false});
+
+      handle.addEventListener('touchend', e=>{
+        const touch=e.changedTouches[0];
+        if(touchGhost){touchGhost.remove();touchGhost=null;}
+        const target=getRowAtY(touch.clientY);
+        if(target){
+          const rect=target.getBoundingClientRect();
+          reorderBlocks(dragSrcId, target.dataset.id, touch.clientY<rect.top+rect.height/2);
+        }
+        dragSrcId=null;
+        clearDragStyles();
+      });
+    }
+
+    tl.appendChild(row);
+  });
+  if(!sorted.length)tl.innerHTML='<div class="status-msg">No blocks yet — add one below</div>';
+}
+
+// When a block is dragged onto another, we cascade start times so the schedule stays coherent:
+// the dragged block takes the target's slot and all affected blocks shift accordingly.
+function reorderBlocks(srcId, targetId, insertBefore){
+  const blocks=getBlocks();
+  const sorted=blocks.slice().sort((a,b)=>toMins(a.start)-toMins(b.start));
+  const srcIdx=sorted.findIndex(b=>b.id===srcId);
+  const tgtIdx=sorted.findIndex(b=>b.id===targetId);
+  if(srcIdx===-1||tgtIdx===-1)return;
+
+  // Remove src from sorted list and reinsert at new position
+  const [moved]=sorted.splice(srcIdx,1);
+  const newIdx=insertBefore
+    ? (srcIdx<tgtIdx ? tgtIdx-1 : tgtIdx)
+    : (srcIdx<tgtIdx ? tgtIdx : tgtIdx+1);
+  sorted.splice(newIdx,0,moved);
+
+  // Cascade: reassign start times keeping same durations
+  // Anchor first block's start time, each subsequent block starts after the previous ends
+  let cursor=toMins(sorted[0].start);
+  sorted.forEach((b,i)=>{
+    if(i===0){cursor=toMins(b.start);}
+    else{b.start=fromMins(cursor);}
+    cursor+=b.dur;
+  });
+
+  // Write back to allData preserving locked blocks' original times
+  blocks.forEach(b=>{
+    const updated=sorted.find(s=>s.id===b.id);
+    if(updated&&!b.locked)b.start=updated.start;
+  });
+  setBlocks(blocks);
+  renderBlocks(blocks,dayKey());
+}
+
+function updateDayLabel(){
+  const d=getDateObj();
+  const lbl=offset===0?'Today':offset===1?'Tomorrow':offset===-1?'Yesterday':
+    DAYS_SHORT[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()];
+  document.getElementById('day-label').textContent=lbl;
+}
+
+async function render(){
+  updateDayLabel();
+  const key=dayKey();
+  if(!weatherCache){
+    document.getElementById('timeline').innerHTML='<div class="status-msg"><i class="ti ti-moon-stars"></i>Fetching prayers & forecast…</div>';
+    const[prayers,daily]=await Promise.all([fetchPrayers(key),fetchWeather()]);
+    renderWeather(daily);
+    renderWeekPanel(daily);
+    if(!allData[key])allData[key]=buildDefaultBlocks(prayers,key);
+  } else {
+    if(!allData[key]){
+      const prayers=await fetchPrayers(key);
+      allData[key]=buildDefaultBlocks(prayers,key);
+    }
+  }
+  renderBlocks(getBlocks(),key);
+  renderWater(key);
+}
+
+function toggleDone(id){
+  const blocks=getBlocks(),b=blocks.find(x=>x.id===id);
+  if(b){b.done=!b.done;setBlocks(blocks);renderBlocks(blocks,dayKey());}
+}
+function deleteBlock(id){
+  const b=getBlocks().find(x=>x.id===id);if(b?.locked)return;
+  setBlocks(getBlocks().filter(x=>x.id!==id));renderBlocks(getBlocks(),dayKey());
+}
+function changeDay(d){offset+=d;render();}
+
+let editingId=null;
+function openModal(){
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add time block';
+  document.getElementById('modal-submit').textContent='Add';
+  document.getElementById('m-label').value='';
+  document.getElementById('m-type').value='chore';
+  document.getElementById('m-start').value='19:25';
+  document.getElementById('m-dur').value='20';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('m-label').focus(),50);
+}
+function openEdit(id){
+  const b=getBlocks().find(x=>x.id===id);if(!b)return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit block';
+  document.getElementById('modal-submit').textContent='Save';
+  document.getElementById('m-type').value=b.type in META?b.type:'free';
+  document.getElementById('m-label').value=b.label||'';
+  document.getElementById('m-start').value=b.start;
+  document.getElementById('m-dur').value=b.dur;
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('m-label').focus(),50);
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');editingId=null;}
+function addBlock(){
+  const type=document.getElementById('m-type').value;
+  const label=document.getElementById('m-label').value.trim()||(META[type]||META.free).label;
+  const start=document.getElementById('m-start').value;
+  const dur=parseInt(document.getElementById('m-dur').value)||20;
+  if(!start)return;
+  const blocks=getBlocks();
+  if(editingId){const b=blocks.find(x=>x.id===editingId);if(b){b.type=type;b.label=label;b.start=start;b.dur=dur;}}
+  else blocks.push({id:uid(),type,label,start,dur,done:false});
+  setBlocks(blocks);closeModal();renderBlocks(blocks,dayKey());
+}
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+render();
+</script>
+</body>
+</html>
