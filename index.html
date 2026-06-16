@@ -319,20 +319,29 @@ const GYM_SPLIT={
   5:{label:'Front squat + arms',        icon:'ti-barbell',   focus:['Front Squat','Arms'], color:'#1a7a4a'},
 };
 
-// getWorkoutForDate: pass howickDateStr to swap back day onto Howick day
+// getWorkoutForDate: if Howick walk lands on Mon or Fri, swap that day's workout
+// with Thursday's back day. Mon/Fri never become rest days.
 function getWorkoutForDate(dateStr, howickDateStr){
   const d=new Date(dateStr+'T00:00:00');
   const dow=d.getDay();
-  const backDay=GYM_SPLIT[4]; // Thursday = Safety bar + back
 
-  // If this is the Howick walk day (and it's not already Thursday), assign back day
-  if(howickDateStr && dateStr===howickDateStr && dow!==4){
-    return backDay;
+  if(howickDateStr && howickDateStr===dateStr){
+    const howickDow=new Date(howickDateStr+'T00:00:00').getDay();
+    // Only swap if Howick is on Mon(1) or Fri(5) — give those days the back workout
+    if(howickDow===1||howickDow===5){
+      return GYM_SPLIT[4]; // Safety bar + back
+    }
+    // Thu already has back day — no change needed
+    return GYM_SPLIT[dow]||null;
   }
-  // If this is Thursday and Howick walk is on a different day, Thursday becomes rest
-  if(dow===4 && howickDateStr && howickDateStr!==dateStr){
-    return null; // rest day — back workout moved to Howick day
+
+  // If Howick swapped Mon or Fri to back day, Thu becomes that day's original workout
+  if(howickDateStr){
+    const howickDow=new Date(howickDateStr+'T00:00:00').getDay();
+    if(dow===4 && howickDow===1) return GYM_SPLIT[1]; // Thu gets Mon's workout
+    if(dow===4 && howickDow===5) return GYM_SPLIT[5]; // Thu gets Fri's workout
   }
+
   return GYM_SPLIT[dow]||null;
 }
 
