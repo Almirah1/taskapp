@@ -104,6 +104,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .task-chip.any-day{background:var(--chore-bg);color:var(--chore-c);border-color:rgba(45,125,210,0.2);}
 .task-chip.warning{background:#fef0ea;color:#b54015;border-color:rgba(181,64,21,0.2);}
 .task-chip i{font-size:12px;}
+.monthly-task-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.monthly-task-label{font-size:11px;font-weight:600;color:var(--text3);min-width:70px;flex-shrink:0;}
 .no-tasks{font-size:12px;color:var(--text3);font-style:italic;}
 
 /* Timeline */
@@ -306,51 +308,82 @@ const GYM_SPLIT={
   5:{label:'Front squat + arms',        icon:'ti-barbell',   focus:['Front Squat','Arms'], color:'#1a7a4a'},
 };
 
-function getWorkoutForDate(dateStr){
+// getWorkoutForDate: pass howickDateStr to swap back day onto Howick day
+function getWorkoutForDate(dateStr, howickDateStr){
   const d=new Date(dateStr+'T00:00:00');
-  return GYM_SPLIT[d.getDay()]||null;
+  const dow=d.getDay();
+  const backDay=GYM_SPLIT[4]; // Thursday = Safety bar + back
+
+  // If this is the Howick walk day (and it's not already Thursday), assign back day
+  if(howickDateStr && dateStr===howickDateStr && dow!==4){
+    return backDay;
+  }
+  // If this is Thursday and Howick walk is on a different day, Thursday becomes rest
+  if(dow===4 && howickDateStr && howickDateStr!==dateStr){
+    return null; // rest day — back workout moved to Howick day
+  }
+  return GYM_SPLIT[dow]||null;
 }
 
 function renderWeekPanel(daily){
   const el=document.getElementById('combined-week-content');
   if(!el)return;
   const schedule=scheduleCleaning(daily);
+  const monthly=getMonthlyTaskForWeek(daily);
+  const extras=getWeeklyExtras(daily);
   const today=new Date();today.setHours(0,0,0,0);
   const dow=today.getDay();
   const monday=new Date(today);monday.setDate(today.getDate()-(dow===0?6:dow-1));
 
   let html='<div class="cleaning-week">';
+
+  // Monthly task callout at top if due this week
+  if(monthly){
+    const {task,day,note}=monthly;
+    const isPast=day.date<today;
+    const isToday=day.date.getTime()===today.getTime();
+    let cls='weather-needed', extra='';
+    if(!task.needsSun){cls='any-day';}
+    else if(note==='maybe'){cls='weather-needed';extra=' ☁️';}
+    else if(note==='postpone?'){cls='warning';extra=' ⚠️';}
+    else{cls='weather-needed';extra=' ☀️';}
+    html+=`<div class="monthly-task-row" style="${isPast?'opacity:0.45':''}">
+      <div class="monthly-task-label">📅 This month</div>
+      <div class="cleaning-tasks">
+        <span class="task-chip ${cls}" style="font-weight:500;">
+          <i class="ti ${task.icon}" aria-hidden="true"></i>${task.label}${extra}
+          <span style="opacity:0.6;font-size:10px;margin-left:2px;">→ ${isToday?'Today':DAYS_SHORT[day.date.getDay()]}</span>
+        </span>
+      </div>
+    </div>
+    <div style="height:0.5px;background:var(--border);margin:6px 0 8px;"></div>`
+  }
+
   for(let i=0;i<7;i++){
     const d=new Date(monday);d.setDate(monday.getDate()+i);
     const ds=d.toISOString().slice(0,10);
     const isToday=d.getTime()===today.getTime();
     const isPast=d<today;
     const dayName=isToday?'Today':DAYS_SHORT[d.getDay()];
-    const workout=GYM_SPLIT[d.getDay()];
+    const workout=getWorkoutForDate(ds, extras.howick?.dateStr);
     const cleanDay=schedule.find(s=>s.dateStr===ds);
     const cleanTasks=cleanDay?.tasks||[];
+    const isMonthlyDay=monthly&&monthly.day.dateStr===ds;
+    const isHowickDay=extras.howick&&extras.howick.dateStr===ds;
+    const isChargeDay=extras.charge.some(c=>c.dateStr===ds);
 
     html+=`<div class="cleaning-day-row" style="${isPast?'opacity:0.45':''}">
       <div class="cleaning-day-label" style="${isToday?'color:var(--prayer-c);font-weight:600':''}">${dayName}</div>
       <div class="cleaning-tasks">`;
 
-    // Hair wash chip
     if(isHairWashDay(ds)){
-      html+=`<span class="task-chip" style="background:var(--hair-bg);color:var(--hair-c);border-color:rgba(124,58,237,0.25);">
-        <i class="ti ti-sparkles" aria-hidden="true"></i>Hair wash
-      </span>`;
+      html+=`<span class="task-chip" style="background:var(--hair-bg);color:var(--hair-c);border-color:rgba(124,58,237,0.25);"><i class="ti ti-sparkles" aria-hidden="true"></i>Hair wash</span>`;
     }
-
-    // Gym chip
     if(workout){
-      html+=`<span class="task-chip" style="background:${workout.color}0f;color:${workout.color};border-color:${workout.color}25;">
-        <i class="ti ${workout.icon}" aria-hidden="true"></i>${workout.label}
-      </span>`;
+      html+=`<span class="task-chip" style="background:${workout.color}0f;color:${workout.color};border-color:${workout.color}25;"><i class="ti ${workout.icon}" aria-hidden="true"></i>${workout.label}</span>`;
     } else {
       html+=`<span class="task-chip any-day" style="opacity:0.5"><i class="ti ti-zzz" aria-hidden="true"></i>Rest</span>`;
     }
-
-    // Cleaning chips
     cleanTasks.forEach(t=>{
       let cls='any-day',extra='';
       if(t.weatherTask){
@@ -361,7 +394,25 @@ function renderWeekPanel(daily){
       }
       html+=`<span class="task-chip ${cls}"><i class="ti ${t.icon}" aria-hidden="true"></i>${t.label}${extra}</span>`;
     });
-
+    if(isMonthlyDay&&monthly){
+      const {task,note}=monthly;
+      let cls='any-day',extra='';
+      if(task.needsSun){
+        if(note==='maybe'){cls='weather-needed';extra=' ☁️';}
+        else if(note==='postpone?'){cls='warning';extra=' ⚠️';}
+        else{cls='weather-needed';extra=' ☀️';}
+      }
+      html+=`<span class="task-chip ${cls}" style="font-style:italic;"><i class="ti ${task.icon}" aria-hidden="true"></i>${task.label}${extra}</span>`;
+    }
+    if(isHowickDay){
+      const wq=extras.howick.wq;
+      const cls=wq>=1?'weather-needed':'warning';
+      const extra=wq===2?' ☀️':wq===1?' ☁️':' ⚠️';
+      html+=`<span class="task-chip ${cls}"><i class="ti ti-sunrise" aria-hidden="true"></i>Howick sunrise walk${extra}</span>`;
+    }
+    if(isChargeDay){
+      html+=`<span class="task-chip any-day"><i class="ti ti-bolt" aria-hidden="true"></i>Charge car 🌙</span>`;
+    }
     html+='</div></div>';
   }
   html+='</div>';
@@ -450,7 +501,89 @@ function scheduleCleaning(daily) {
   return weekDays;
 }
 
-// ── Weather grid ──────────────────────────────────────────────────────
+// ── Monthly tasks ──────────────────────────────────────────────────────
+// 4 tasks spread one per week across the month
+const MONTHLY_TASKS=[
+  {id:'mattress',  label:'Wash mattress protector', icon:'ti-bed',        needsSun:true,  dur:15},
+  {id:'carout',    label:'Wash car outside',         icon:'ti-car',        needsSun:true,  dur:40},
+  {id:'carin',     label:'Clean car inside',         icon:'ti-car-garage', needsSun:false, dur:30},
+  {id:'petrol',    label:'Petrol run (mower + tyres)',icon:'ti-gas-station',needsSun:false, dur:30},
+];
+
+// Returns which monthly task is due this week (week 1 = task 1, week 2 = task 2, etc.)
+function getMonthlyTaskForWeek(daily){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dayOfMonth=today.getDate();
+  // Determine week number within month (1–4+)
+  const weekOfMonth=Math.min(3, Math.floor((dayOfMonth-1)/7)); // 0-indexed, cap at 3
+  const task=MONTHLY_TASKS[weekOfMonth];
+  if(!task) return null;
+
+  // Find best day this week for this task (exclude Wednesday, prefer sun if needed)
+  const dow=today.getDay();
+  const monday=new Date(today); monday.setDate(today.getDate()-(dow===0?6:dow-1));
+  const weatherByDate={};
+  if(daily){
+    daily.time.forEach((dt,i)=>{
+      const rain=daily.precipitation_sum[i]||0;
+      const hrs=daily.precipitation_hours[i]||0;
+      weatherByDate[dt]=rain<2&&hrs<2?2:(rain<6&&hrs<4?1:0);
+    });
+  }
+
+  const weekDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(monday); d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    if(d.getDay()===3) continue; // skip Wednesday
+    weekDays.push({date:d, dateStr:ds, wq:weatherByDate[ds]??-1});
+  }
+
+  let bestDay;
+  if(task.needsSun){
+    bestDay=[...weekDays].sort((a,b)=>b.wq-a.wq)[0];
+  } else {
+    // Any day — pick mid-week
+    bestDay=weekDays.find(d=>[4,5].includes(d.date.getDay()))||weekDays[0];
+  }
+  if(!bestDay) return null;
+
+  const note=task.needsSun?(bestDay.wq===2?'':(bestDay.wq===1?'maybe':'postpone?')):'';
+  return {task, day:bestDay, note};
+}
+
+
+// ── Weekly extras ──────────────────────────────────────────────────────
+function getWeeklyExtras(daily){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dow=today.getDay();
+  const monday=new Date(today);monday.setDate(today.getDate()-(dow===0?6:dow-1));
+  const weatherByDate={};
+  if(daily){
+    daily.time.forEach((dt,i)=>{
+      const rain=daily.precipitation_sum[i]||0;
+      const hrs=daily.precipitation_hours[i]||0;
+      weatherByDate[dt]=rain<2&&hrs<2?2:(rain<6&&hrs<4?1:0);
+    });
+  }
+  const weekDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    weekDays.push({date:d,dateStr:ds,wq:weatherByDate[ds]??-1,dow:d.getDay()});
+  }
+  // Howick: best clear weekday morning, not Wednesday
+  const howickEligible=weekDays.filter(d=>d.dow>=1&&d.dow<=5&&d.dow!==3).sort((a,b)=>b.wq-a.wq);
+  const howickDay=howickEligible[0]||null;
+  // Car charge: Mon + Thu overnight
+  const chargeDay1=weekDays.find(d=>d.dow===1);
+  const chargeDay2=weekDays.find(d=>d.dow===4);
+  return {
+    howick:howickDay,
+    charge:[chargeDay1,chargeDay2].filter(Boolean)
+  };
+}
+
 function weatherIcon(code){
   if(code===0)return'☀️';if(code<=2)return'⛅';if(code<=3)return'☁️';
   if(code<=49)return'🌫️';if(code<=67)return'🌧️';if(code<=77)return'❄️';
@@ -612,7 +745,8 @@ function buildDefaultBlocks(prayers, dateStr){
   const postWorkShowerLabel=hairWash?'Post-work shower + hair wash':'Post-work shower';
   const postWorkShowerType=hairWash?'hairwash':'shower';
   const cleaning=getCleaningTaskForDate(dateStr, weatherCache);
-  const workout=getWorkoutForDate(dateStr);
+  const extras=weatherCache?getWeeklyExtras(weatherCache):null;
+  const workout=getWorkoutForDate(dateStr, extras?.howick?.dateStr);
   const gymLabel=workout?workout.label:'Gym session';
 
   const fajrTime=prayers?.Fajr||null;
